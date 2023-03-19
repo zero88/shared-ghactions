@@ -1,0 +1,79 @@
+name: Build docs asynchronous
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: 'Build profile'
+        type: string
+        required: true
+      version:
+        description: 'Project version'
+        type: string
+        required: true
+      semanticVersion:
+        description: 'Project semantic version'
+        type: string
+        required: true
+      hashVersion:
+        description: 'Project hash commit'
+        type: string
+        required: true
+      sha:
+        description: 'SHA commit id'
+        required: true
+      isRelease:
+        description: 'Is release'
+        required: false
+        default: false
+      docsRepo:
+        description: 'Docs repo'
+        type: string
+        required: true
+      docsRef:
+        description: 'Docs ref'
+        type: string
+        required: false
+        default: 'main'
+      docsWorkflow:
+        description: 'Docs workflow build'
+        type: string
+        required: false
+        default: 'wfd-docs.yml'
+      docsOutDir:
+        description: 'Docs output directory'
+        type: string
+        required: false
+        default: 'docs/build/antora'
+    secrets:
+      githubToken:
+        description: 'GitHub Token'
+        required: true
+
+jobs:
+  runs-on: ubuntu-latest
+  env:
+    REPO: ${{ inputs.docsRepo }}
+    REF: main
+    WORKFLOW: ${{ inputs.docsWorkflow }}
+    GITHUB_TOKEN: ${{ secrets.githubToken }}
+  steps:
+    - name: Trigger build ${{ inputs.profile }} documentation
+      shell: bash
+      run: |
+        gh workflow run ${{ inputs.docsWorkflow }} \
+          --repo ${{ inputs.docsRepo }} --ref ${{ inputs.docsRef }} \
+          -f profile=${{ inputs.profile }} \
+          -f version=${{ inputs.version }} \
+          -f semanticVersion=${{ inputs.semanticVersion }} \
+          -f hashVersion=${{ inputs.hashVersion }} \
+          -f sha=${{ inputs.sha }} \
+          -f isRelease=${{ inputs.isRelease }} \
+          -f antoraBuildDir=${{ inputs.docsOutDir }}
+
+    - name: Verify GitHub workflow run
+      shell: bash
+      run: |
+        sleep 5
+        fields=workflowDatabaseId,databaseId,status,event,headBranch,headSha,name,conclusion,url,createdAt,updatedAt
+        gh run list -R ${{ inputs.docsRepo }} -b ${{ inputs.docsRef }} -w ${{ inputs.docsWorkflow }} -L 1 --json $fields | jq

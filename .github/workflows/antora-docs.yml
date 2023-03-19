@@ -1,0 +1,148 @@
+name: Build-Publish docs to website
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: 'Project profile'
+        required: true
+      version:
+        description: 'Project version'
+        required: true
+      semanticVersion:
+        description: 'Project semantic version'
+        required: false
+      hashVersion:
+        description: 'Project hash commit'
+        required: true
+      sha:
+        description: 'SHA commit id'
+        required: true
+      isRelease:
+        description: 'Is release'
+        required: false
+        default: false
+      antoraBuildDir:
+        description: 'Specifics Antora output dir per profile'
+        required: true
+      javaDist:
+        description: 'Java distribution'
+        required: false
+        default: 'temurin'
+      javaVersion:
+        description: 'Java version'
+        required: false
+        default: '17'
+      webdocs:
+        description: 'Webdocs layout repository'
+        required: false
+        default: 'zero88/jooqx-webdocs'
+      webdocsWF:
+        description: 'Webdocs workflow'
+        required: false
+        default: 'docs.yml'
+    secrets:
+      githubToken:
+        description: 'GitHub Token'
+        required: true
+
+jobs:
+  build:
+    name: Build ${{ inputs.profile }} documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.3.0
+        with:
+          ref: ${{ inputs.sha }}
+          token: ${{ secrets.githubToken }}
+          fetch-depth: 0
+          submodules: 'true'
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: false
+          git_push_gpgsign: false
+          gpg_private_key: ${{ secrets.CI_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.CI_GPG_PASSPHARSE }}
+
+      - uses: actions/setup-java@v3.9.0
+        with:
+          distribution: ${{ inputs.javaDist }}
+          java-version: ${{ inputs.javaVersion }}
+          cache: 'gradle'
+
+      - name: Evaluate context
+        id: context
+        shell: bash
+        run: |
+          if [[ '${{ inputs.isRelease }}' == 'true' ]]; then
+            docBranch="docs/${{ inputs.profile }}/v${{ inputs.version }}"
+            docVersion="${{ inputs.version }}"
+            commitVersion="${{ inputs.version }}-${{ inputs.hashVersion }}"
+          else
+            docBranch="docs/main"
+            docVersion="main"
+            commitVersion="main-${{ inputs.hashVersion }}"
+          fi
+          docProfile="${{ inputs.profile }}:docs"
+          docOutDir="./antora/${{ inputs.profile }}"
+          
+          echo docProfile=$docProfile >> $GITHUB_OUTPUT
+          echo docBranch=$docBranch >> $GITHUB_OUTPUT
+          echo docVersion=$docVersion >> $GITHUB_OUTPUT
+          echo docOutDir=$docOutDir >> $GITHUB_OUTPUT
+          echo docBuildDir=${{ inputs.antoraBuildDir }} >> $GITHUB_OUTPUT
+          echo ciMsg="${{ inputs.profile }} documentation [$commitVersion]" >> $GITHUB_OUTPUT
+
+      - name: Build docs
+        shell: bash
+        run: |
+          ./gradlew antora \
+              -Pprofile=${{ steps.context.outputs.docProfile }} \
+              -PdocVersion=${{ steps.context.outputs.docVersion }} \
+              -Pversion=${{ inputs.version }} \
+              -PsemanticVersion=${{ inputs.semanticVersion }} \
+              -PbuildHash=${{ inputs.hashVersion }} \
+              -PbuildBy="GitHub-Action"
+
+      - name: Sync changes to Git branch [${{ steps.context.outputs.docBranch }}]
+        shell: bash
+        run: |
+          git fetch
+          git checkout docs/main
+          rm -rf ${{ steps.context.outputs.docOutDir }} \
+            && mkdir ${{ steps.context.outputs.docOutDir }} \
+            && touch ${{ steps.context.outputs.docOutDir }}/.gitkeep \
+            && cp -rf ./${{ steps.context.outputs.docBuildDir }}/* ${{ steps.context.outputs.docOutDir }}
+          git add .
+          git diff-index --quiet HEAD || git commit -am "Update ${{ steps.context.outputs.ciMsg }}"
+          if [[ '${{ inputs.isRelease }}' == 'true' ]]; then
+               git tag -sf -am "Release ${{ steps.context.outputs.ciMsg }}" ${{ steps.context.outputs.docBranch }}
+          fi
+          git push --follow-tags
+
+  deploy:
+    needs: build
+    name: Trigger to deploy website
+    runs-on: ubuntu-latest
+    env:
+      REPO: ${{ inputs.webdocs }}
+      REF: main
+      WORKFLOW: ${{ inputs.webdocsWF }}
+      GITHUB_TOKEN: ${{ secrets.githubToken }}
+    steps:
+      - name: Trigger to deploy workflow
+        shell: bash
+        run: |
+          gh workflow run ${{ env.WORKFLOW }} \
+            --repo ${{ env.REPO }} --ref ${{ env.REF }} -f ciMsg="Deploy ${{ steps.context.outputs.ciMsg }}"
+
+      - name: Verify GitHub workflow run
+        shell: bash
+        run: |
+          sleep 5
+          fields=workflowDatabaseId,databaseId,status,event,headBranch,headSha,name,conclusion,url,createdAt,updatedAt
+          gh run list -R ${{ env.REPO }} -b ${{ env.REF }} -w ${{ env.WORKFLOW }} -L 1 --json $fields | jq

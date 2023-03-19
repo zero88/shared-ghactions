@@ -1,0 +1,73 @@
+name: Project Build
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: 'Build profile'
+        type: string
+        required: true
+      version:
+        description: 'Project version'
+        type: string
+        required: true
+      semanticVersion:
+        description: 'Project semantic version'
+        type: string
+        required: true
+      hashVersion:
+        description: 'Project hash commit'
+        type: string
+        required: true
+      buildArgs:
+        description: 'Gradle build arguments'
+        required: false
+        type: string
+        default: 'clean build'
+      javaDist:
+        description: 'Java distribution'
+        required: false
+        type: string
+        default: 'temurin'
+      javaVersion:
+        description: 'Java version'
+        required: false
+        type: string
+        default: '11'
+      runnerOS:
+        description: 'Runner OS'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+
+jobs:
+  build:
+    name: Build
+    runs-on: ${{ inputs.runnerOS }}
+    steps:
+      - uses: actions/checkout@v3.3.0
+
+      - uses: actions/setup-java@v3.9.0
+        with:
+          distribution: ${{ inputs.javaDist }}
+          java-version: ${{ inputs.javaVersion }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-gradle-
+
+      - name: Build
+        shell: bash
+        run: |
+          ./gradlew ${{ inputs.buildArgs }} \
+              -Pprofile=${{ inputs.profile }} \
+              -Pversion=${{ inputs.version }} \
+              -PsemanticVersion=${{ inputs.semanticVersion }} \
+              -PbuildBy="GitHub-Action" \
+              -PbuildHash=${{ inputs.hashVersion }} \
+              --no-daemon
