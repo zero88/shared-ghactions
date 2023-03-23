@@ -1,0 +1,4 @@
+[submodule "java-gradle-template"]
+	path = java-gradle-template
+	url = git@github.com:zero88/java-gradle-template.git
+	branch = main
