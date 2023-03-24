@@ -30,6 +30,11 @@ on:
         required: false
         type: string
         default: '11'
+      runnerOS:
+        description: 'Runner OS'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
     secrets:
       githubToken:
         description: 'GitHub Token'
@@ -41,8 +46,7 @@ on:
 jobs:
   analysis:
     name: Test & Sonar analysis
-    if: inputs.isRelease == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runnerOS }}
     steps:
       - uses: actions/checkout@v3.3.0
         with:
