@@ -1,0 +1,93 @@
+name: Project Publisher
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: 'Build profile'
+        type: string
+        required: true
+      semanticVersion:
+        description: 'Project semantic version'
+        type: string
+        required: true
+      branch:
+        description: 'Git branch'
+        type: string
+        required: true
+      buildArgs:
+        description: 'Gradle test arguments'
+        required: false
+        type: string
+        default: 'clean test jacocoTestReport'
+      javaDist:
+        description: 'Java distribution'
+        required: false
+        type: string
+        default: 'temurin'
+      javaVersion:
+        description: 'Java version'
+        required: false
+        type: string
+        default: '11'
+    secrets:
+      githubToken:
+        description: 'GitHub Token'
+        required: true
+      sonarToken:
+        description: 'Sonar Token'
+        required: true
+
+jobs:
+  analysis:
+    name: Test & Sonar analysis
+    if: inputs.isRelease == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.3.0
+        with:
+          fetch-depth: 0
+          submodules: 'true'
+
+      - uses: actions/setup-java@v3.9.0
+        with:
+          distribution: ${{ inputs.javaDist}}
+          java-version: ${{ inputs.java }}
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-gradle-
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v2.1.4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-sonar
+          restore-keys: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-sonar
+
+
+      - name: Run test
+        shell: bash
+        run: |
+          count=$(./gradlew --stacktrace ${{ inputs.buildArgs }} \
+                      -Pprofile=${{ inputs.PROFILE }} \
+                      -PsemanticVersion=${{ inputs.semanticVersion }} \
+                | tee 1>&2 | grep -c 'There were failing tests' ||:)
+          (( $count > 0 )) && exit 1 || echo
+
+      - name: SonarQube
+        shell: bash
+        run: |
+          ./gradlew sonarqube -x test --stacktrace \
+              -Pprofile=${{ inputs.PROFILE }} \
+              -PsemanticVersion=${{ inputs.semanticVersion }} \
+              -Dsonar.branch.name=${{ inputs.branch }} \
+              -Dsonar.login=${{ secrets.sonarToken }} \
+              -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
+        env:
+          GITHUB_TOKEN: ${{ secrets.githubToken }}
