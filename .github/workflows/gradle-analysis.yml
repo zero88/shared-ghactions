@@ -55,8 +55,8 @@ jobs:
 
       - uses: actions/setup-java@v3.10.0
         with:
-          distribution: ${{ inputs.javaDist}}
-          java-version: ${{ inputs.java }}
+          distribution: ${{ inputs.javaDist }}
+          java-version: ${{ inputs.javaVersion }}
 
       - uses: actions/cache@v3
         with:
@@ -73,7 +73,6 @@ jobs:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-sonar
           restore-keys: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-sonar
-
 
       - name: Run test
         shell: bash
