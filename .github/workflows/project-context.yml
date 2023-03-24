@@ -31,6 +31,9 @@ on:
       gpgPassphrase:
         description: 'GPG passphrase'
         required: true
+      gpgFingerprint:
+        description: 'GPG subkey fingerprint'
+        required: false
     outputs:
       branch:
         description: Branch or tag name
@@ -84,6 +87,7 @@ jobs:
           git_push_gpgsign: false
           gpg_private_key: ${{ secrets.gpgKey }}
           passphrase: ${{ secrets.gpgPassphrase }}
+          fingerprint: ${{ secrets.gpgFingerprint }}
 
       - name: Project context
         id: context
