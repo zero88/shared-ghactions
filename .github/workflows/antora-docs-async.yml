@@ -22,14 +22,27 @@ on:
       sha:
         description: 'SHA commit id'
         required: true
+        type: string
       isRelease:
         description: 'Is release'
         required: false
         default: false
-      docsRepo:
+        type: string
+      webdocsRepo:
         description: 'Docs repo'
         type: string
-        required: true
+        required: false
+        default: 'zero88/jooqx-webdocs'
+      docsOutDir:
+        description: 'Docs output directory'
+        type: string
+        required: false
+        default: 'docs/build/antora'
+      docsRepo:
+        description: 'Doc repo'
+        type: string
+        required: false
+        default: 'zero88/shared-ghactions'
       docsRef:
         description: 'Docs ref'
         type: string
@@ -39,12 +52,7 @@ on:
         description: 'Docs workflow build'
         type: string
         required: false
-        default: 'wfd-docs.yml'
-      docsOutDir:
-        description: 'Docs output directory'
-        type: string
-        required: false
-        default: 'docs/build/antora'
+        default: 'antora-docs.yml'
     secrets:
       githubToken:
         description: 'GitHub Token'
@@ -71,7 +79,8 @@ jobs:
             -f hashVersion=${{ inputs.hashVersion }} \
             -f sha=${{ inputs.sha }} \
             -f isRelease=${{ inputs.isRelease }} \
-            -f antoraBuildDir=${{ inputs.docsOutDir }}
+            -f antoraBuildDir=${{ inputs.docsOutDir }} \
+            -f webdocs=${{ inputs.webdocsRepo }}
 
       - name: Verify GitHub workflow run
         shell: bash

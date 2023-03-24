@@ -18,10 +18,12 @@ on:
       sha:
         description: 'SHA commit id'
         required: true
+        type: string
       isRelease:
         description: 'Is release'
         required: false
-        default: false
+        type: string
+        default: 'false'
       antoraBuildDir:
         description: 'Specifics Antora output dir per profile'
         required: true
