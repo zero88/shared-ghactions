@@ -48,7 +48,7 @@ jobs:
     name: Test & Sonar analysis
     runs-on: ${{ inputs.runnerOS }}
     steps:
-      - uses: actions/checkout@v3.4.0
+      - uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 0
           submodules: 'true'
