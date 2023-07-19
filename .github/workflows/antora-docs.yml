@@ -41,11 +41,6 @@ on:
         default: 'main'
         required: false
         type: string
-      javaDist:
-        description: 'Java distribution'
-        default: 'temurin'
-        required: false
-        type: string
       javaVersion:
         description: 'Java version'
         default: '17'
@@ -64,6 +59,9 @@ on:
       gpgFingerprint:
         description: 'GPG subkey fingerprint'
         required: false
+        
+env: 
+  JAVA_DIST: 'temurin'
 
 jobs:
   context:
@@ -125,7 +123,7 @@ jobs:
 
       - uses: actions/setup-java@v3
         with:
-          distribution: ${{ inputs.javaDist }}
+          distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ inputs.javaVersion }}
           cache: 'gradle'
 
