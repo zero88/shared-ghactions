@@ -1,7 +1,7 @@
 name: Build-Publish docs to website
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       profile:
         description: 'Project profile'
