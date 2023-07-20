@@ -71,6 +71,7 @@ jobs:
       PROJECT_NAME: ${{ inputs.profile }}
       PROJECT_GH_PAGES_REF: gh-pages
       PROJECT_GH_PAGES_PATH: ${{ inputs.profile }}-pages
+      WEBDOCS_PATH: docs
       PROJECT_DOCS_REF: docs/main
       PROJECT_DOCS_PATH: ${{ inputs.profile }}-docs
       DOC_PROFILE: ${{ inputs.profile }}:docs
@@ -160,6 +161,7 @@ jobs:
             && mkdir $fqn_doc_path \
             && touch $fqn_doc_path/.gitkeep \
             && cp -rf ./${{ inputs.antoraBuildDir }}/* $fqn_doc_path
+          cd ${{ env.PROJECT_DOCS_PATH }}
           git add .
           git diff-index --quiet HEAD || git commit -am "Update ${{ steps.context.outputs.ciMsg }}"
           if [[ '${{ inputs.isRelease }}' == 'true' ]]; then
@@ -182,10 +184,11 @@ jobs:
       - name: Sync changes to Git branch [${{ env.PROJECT_GH_PAGES_REF }}]
         shell: bash
         run: |
-          rm -rf ${{ env.PROJECT_NAME }}/docs \
-            && mkdir -p ${{ env.PROJECT_NAME }}/docs \
-            && cp -rf webdocs/build/* webdocs/build/.[^.]* ${{ env.PROJECT_NAME }}/docs
-          cd ${{ env.PROJECT_NAME }}
+          fqn_gh_path="${{ env.PROJECT_GH_PAGES_PATH }}/${{ env.WEBDOCS_PATH }}"
+          rm -rf $fqn_gh_path \
+            && mkdir -p $fqn_gh_path \
+            && cp -rf webdocs/build/* webdocs/build/.[^.]* $fqn_gh_path
+          cd ${{ env.PROJECT_GH_PAGES_PATH }}
           git add .
           git diff-index --quiet HEAD || git commit -am "Deploy ${{ steps.context.outputs.ciMsg }} documentation"
           git push -u origin ${{ env.PROJECT_GH_PAGES_REF }}
