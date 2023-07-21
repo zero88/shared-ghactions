@@ -81,19 +81,20 @@ jobs:
         with:
           ref: ${{ inputs.sha }}
           submodules: 'true'
-          token: ${{ secrets.githubToken }}
           
       - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_DOCS_REF }}
         uses: actions/checkout@v3
         with:
           ref: ${{ env.PROJECT_DOCS_REF }}
           path: ${{ env.PROJECT_DOCS_PATH }}
+          token: ${{ secrets.githubToken }}
 
       - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_GH_PAGES_REF }}
         uses: actions/checkout@v3
         with:
           ref: ${{ env.PROJECT_GH_PAGES_REF }}
           path: ${{ env.PROJECT_GH_PAGES_PATH }}
+          token: ${{ secrets.githubToken }}
 
       - name: Checkout webdocs
         uses: actions/checkout@v3
