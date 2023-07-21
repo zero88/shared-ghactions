@@ -112,6 +112,19 @@ jobs:
           gpg_private_key: ${{ secrets.gpgKey }}
           passphrase: ${{ secrets.gpgPassphrase }}
           fingerprint: ${{ secrets.gpgFingerprint }}
+          workdir: ${{ env.PROJECT_DOCS_PATH }}
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: false
+          git_push_gpgsign: false
+          gpg_private_key: ${{ secrets.gpgKey }}
+          passphrase: ${{ secrets.gpgPassphrase }}
+          fingerprint: ${{ secrets.gpgFingerprint }}
+          workdir: ${{ env.PROJECT_GH_PAGES_PATH }}
           
       - name: Evaluate context
         id: context
