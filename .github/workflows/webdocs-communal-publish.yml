@@ -36,10 +36,7 @@ jobs:
       - name: Trigger build ${{ inputs.profile }} documentation
         shell: bash
         run: |
-          gh workflow run ${{ inputs.webdocsWorkflow }} \
-            --repo "${{ inputs.webdocsRepo }}" \ 
-            --ref "${{ inputs.webdocsRef }}" \
-            -f docCommitMsg="${{ inputs.docCommitMsg }}"
+          gh workflow run ${{ inputs.webdocsWorkflow }} --repo "${{ inputs.webdocsRepo }}" --ref "${{ inputs.webdocsRef }}" -f docCommitMsg="${{ inputs.docCommitMsg }}"
 
       - name: Verify GitHub workflow run
         shell: bash
