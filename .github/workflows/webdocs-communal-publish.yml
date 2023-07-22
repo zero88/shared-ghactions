@@ -37,13 +37,13 @@ jobs:
         shell: bash
         run: |
           gh workflow run ${{ inputs.webdocsWorkflow }} \
-            --repo ${{ inputs.webdocsRepo }} \ 
-            --ref ${{ inputs.webdocsRef }} \
-            -f docCommitMsg=${{ inputs.docCommitMsg }}
+            --repo "${{ inputs.webdocsRepo }}" \ 
+            --ref "${{ inputs.webdocsRef }}" \
+            -f docCommitMsg="${{ inputs.docCommitMsg }}"
 
       - name: Verify GitHub workflow run
         shell: bash
         run: |
           sleep 5
           fields=workflowDatabaseId,databaseId,status,event,headBranch,headSha,name,conclusion,url,createdAt,updatedAt
-          gh run list -R ${{ inputs.webdocsRepo }} -b ${{ inputs.webdocsRef }} -w ${{ inputs.webdocsWorkflow }} -L 1 --json $fields | jq
+          gh run list -R "${{ inputs.webdocsRepo }}" -b "${{ inputs.webdocsRef }}" -w "${{ inputs.webdocsWorkflow }}" -L 1 --json $fields | jq
