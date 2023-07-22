@@ -1,4 +1,4 @@
-name: Project Publisher
+name: Test and analysis
 
 on:
   workflow_call:

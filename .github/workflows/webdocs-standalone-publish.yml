@@ -1,0 +1,99 @@
+name: Deploy webdocs on current repository
+
+on:
+  workflow_call:
+    inputs:
+      profile:
+        description: 'Project profile'
+        required: true
+        type: string
+      webdocsPath:
+        description: 'gh-pages directory'
+        default: 'docs'
+        required: false
+        type: string
+      webdocsRepo:
+        description: 'Webdocs repository'
+        required: true
+        type: string
+      webdocsRef:
+        description: 'Webdocs ref'
+        default: 'main'
+        required: false
+        type: string
+      docCommitMsg:
+        description: 'CI: Document commit message'
+        required: true
+        type: string
+    secrets:
+      githubToken:
+        description: 'GitHub Token'
+        required: true
+      gpgKey:
+        description: 'GPG private key'
+        required: true
+      gpgPassphrase:
+        description: 'GPG passphrase'
+        required: true
+      gpgFingerprint:
+        description: 'GPG subkey fingerprint'
+        required: false
+
+jobs:
+  deploy-site:
+    name: Trigger deploy webdocs
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: ${{ inputs.profile }}
+      PROJECT_GH_PAGES_REF: gh-pages
+      PROJECT_GH_PAGES_PATH: ${{ inputs.profile }}-pages
+    steps:
+      - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_GH_PAGES_REF }}
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ env.PROJECT_GH_PAGES_REF }}
+          path: ${{ env.PROJECT_GH_PAGES_PATH }}
+          token: ${{ secrets.githubToken }}
+
+      - name: Checkout webdocs
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ inputs.webdocsRepo }}
+          ref: ${{ inputs.webdocsRef }}
+          path: webdocs
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v5
+        with:
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_tag_gpgsign: false
+          git_push_gpgsign: false
+          gpg_private_key: ${{ secrets.gpgKey }}
+          passphrase: ${{ secrets.gpgPassphrase }}
+          fingerprint: ${{ secrets.gpgFingerprint }}
+          workdir: ${{ env.PROJECT_GH_PAGES_PATH }}
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Build webdocs
+        shell: bash
+        run: |
+          cp -rf ${{ env.PROJECT_GH_PAGES_PATH }}/antora-playbook.yml webdocs/antora-playbook.yml
+          cd webdocs
+          yarn install
+          yarn antora --fetch antora-playbook.yml --stacktrace
+
+      - name: Sync changes to Git branch [${{ env.PROJECT_GH_PAGES_REF }}]
+        shell: bash
+        run: |
+          fqn_gh_path="${{ env.PROJECT_GH_PAGES_PATH }}/${{ inputs.webdocsPath }}"
+          rm -rf $fqn_gh_path \
+            && mkdir -p $fqn_gh_path \
+            && cp -rf webdocs/build/* webdocs/build/.[^.]* $fqn_gh_path
+          cd ${{ env.PROJECT_GH_PAGES_PATH }}
+          git add .
+          git diff-index --quiet HEAD || git commit -am "Deploy ${{ inputs.docCommitMsg }} documentation"
+          git push -u origin ${{ env.PROJECT_GH_PAGES_REF }}

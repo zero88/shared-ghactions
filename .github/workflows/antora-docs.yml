@@ -1,4 +1,4 @@
-name: Build-Publish docs to website
+name: Build Antora docs
 
 on:
   workflow_call:
@@ -10,10 +10,6 @@ on:
       version:
         description: 'Project version'
         required: true
-        type: string
-      semanticVersion:
-        description: 'Project semantic version'
-        required: false
         type: string
       hashVersion:
         description: 'Project hash commit'
@@ -32,14 +28,17 @@ on:
         description: 'Specifics Antora output dir per profile'
         required: false
         type: string
-      webdocsRepo:
-        description: 'Webdocs repository'
-        required: false
+      docBranch:
+        description: 'Doc branch'
+        required: true
         type: string
-      webdocsRef:
-        description: 'Webdocs repository ref'
-        default: 'main'
-        required: false
+      docVersion:
+        description: 'Doc version'
+        required: true
+        type: string
+      docCommitMsg:
+        description: 'Doc commit message'
+        required: true
         type: string
       javaVersion:
         description: 'Java version'
@@ -65,13 +64,10 @@ env:
 
 jobs:
   build-docs:
-    name: Build and Deploy Antora ${{ inputs.profile }} documentation to gh-pages
+    name: Build Antora ${{ inputs.profile }} documentation
     runs-on: ubuntu-latest
     env:
       PROJECT_NAME: ${{ inputs.profile }}
-      PROJECT_GH_PAGES_REF: gh-pages
-      PROJECT_GH_PAGES_PATH: ${{ inputs.profile }}-pages
-      WEBDOCS_PATH: docs
       PROJECT_DOCS_REF: docs/main
       PROJECT_DOCS_PATH: ${{ inputs.profile }}-docs
       DOC_PROFILE: ${{ inputs.profile }}:docs
@@ -79,7 +75,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.hashVersion }}
+          ref: ${{ inputs.sha }}
           submodules: 'true'
           
       - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_DOCS_REF }}
@@ -88,14 +84,7 @@ jobs:
           ref: ${{ env.PROJECT_DOCS_REF }}
           path: ${{ env.PROJECT_DOCS_PATH }}
           token: ${{ secrets.githubToken }}
-
-      - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_GH_PAGES_REF }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ env.PROJECT_GH_PAGES_REF }}
-          path: ${{ env.PROJECT_GH_PAGES_PATH }}
-          token: ${{ secrets.githubToken }}
-
+          
       - name: Import GPG key
         uses: crazy-max/ghaction-import-gpg@v5
         with:
@@ -108,40 +97,6 @@ jobs:
           fingerprint: ${{ secrets.gpgFingerprint }}
           workdir: ${{ env.PROJECT_DOCS_PATH }}
 
-      - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v5
-        with:
-          git_user_signingkey: true
-          git_commit_gpgsign: true
-          git_tag_gpgsign: false
-          git_push_gpgsign: false
-          gpg_private_key: ${{ secrets.gpgKey }}
-          passphrase: ${{ secrets.gpgPassphrase }}
-          fingerprint: ${{ secrets.gpgFingerprint }}
-          workdir: ${{ env.PROJECT_GH_PAGES_PATH }}
-          
-      - name: Evaluate context
-        id: context
-        shell: bash
-        run: |
-          if [[ '${{ inputs.isRelease }}' == 'true' ]]; then
-            docBranch="docs/${{ inputs.profile }}/v${{ inputs.version }}"
-            docVersion="${{ inputs.version }}"
-            commitVersion="${{ inputs.version }}-${{ inputs.hashVersion }}"
-            cd ${{ env.PROJECT_DOCS_PATH }}
-            git fetch
-            git checkout $(git show-ref --verify --quiet refs/heads/$branch || echo '-b') $docBranch
-            git push -u origin $docBranch
-          else
-            docBranch="${{ env.PROJECT_DOCS_REF }}"
-            docVersion="main"
-            commitVersion="main-${{ inputs.hashVersion }}"
-          fi
-
-          echo docBranch=$docBranch >> $GITHUB_OUTPUT
-          echo docVersion=$docVersion >> $GITHUB_OUTPUT
-          echo ciMsg="${{ inputs.profile }} documentation [$commitVersion]" >> $GITHUB_OUTPUT
-
       - uses: actions/setup-java@v3
         with:
           distribution: ${{ env.JAVA_DIST }}
@@ -153,16 +108,14 @@ jobs:
         run: |
           ./gradlew antoraDoc \
               -Pprofile=${{ env.DOC_PROFILE }} \
-              -PdocVersion=${{ steps.context.outputs.docVersion }} \
+              -PdocVersion=${{ inputs.docVersion }} \
               -Pversion=${{ inputs.version }} \
-              -PsemanticVersion=${{ inputs.semanticVersion }} \
               -PbuildHash=${{ inputs.hashVersion }} \
               -PbuildBy="GitHub-Action"
 
-      - name: Sync changes to Git branch [${{ steps.context.outputs.docBranch }}]
+      - name: Sync doc output to Git branch [${{ inputs.docBranch }}]
         shell: bash
         run: |
-          branch="${{ steps.context.outputs.docBranch }}"
           fqn_doc_path="${{ env.PROJECT_DOCS_PATH }}/${{ env.DOC_PROFILE_PATH }}"
           rm -rf $fqn_doc_path \
             && mkdir $fqn_doc_path \
@@ -170,39 +123,8 @@ jobs:
             && cp -rf ./${{ inputs.antoraBuildDir }}/* $fqn_doc_path
           cd ${{ env.PROJECT_DOCS_PATH }}
           git add .
-          git diff-index --quiet HEAD || git commit -am "Update ${{ steps.context.outputs.ciMsg }}"
+          git diff-index --quiet HEAD || git commit -am "Update ${{ inputs.docCommitMsg }}"
           if [[ '${{ inputs.isRelease }}' == 'true' ]]; then
-               git tag -sf -am "Release ${{ steps.context.outputs.ciMsg }}" ${{ steps.context.outputs.docBranch }}
+               git tag -sf -am "Release ${{ inputs.docCommitMsg }}" ${{ inputs.docBranch }}
           fi
-          git push -u origin $branch
-
-      - name: Checkout webdocs
-        uses: actions/checkout@v3
-        with:
-          repository: ${{ inputs.webdocsRepo }}
-          ref: ${{ inputs.webdocsRef }}
-          path: webdocs
-
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '16'
-
-      - name: Build webdocs
-        shell: bash
-        run: |
-          cp -rf antora-playbook.yml webdocs/antora-playbook.yml
-          cd webdocs
-          yarn install
-          yarn antora --fetch antora-playbook.yml --stacktrace
-
-      - name: Sync changes to Git branch [${{ env.PROJECT_GH_PAGES_REF }}]
-        shell: bash
-        run: |
-          fqn_gh_path="${{ env.PROJECT_GH_PAGES_PATH }}/${{ env.WEBDOCS_PATH }}"
-          rm -rf $fqn_gh_path \
-            && mkdir -p $fqn_gh_path \
-            && cp -rf webdocs/build/* webdocs/build/.[^.]* $fqn_gh_path
-          cd ${{ env.PROJECT_GH_PAGES_PATH }}
-          git add .
-          git diff-index --quiet HEAD || git commit -am "Deploy ${{ steps.context.outputs.ciMsg }} documentation"
-          git push -u origin ${{ env.PROJECT_GH_PAGES_REF }}
+          git push -u origin ${{ inputs.docBranch }}

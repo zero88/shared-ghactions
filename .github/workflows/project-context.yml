@@ -21,6 +21,11 @@ on:
         description: 'Skip CI process if the given branch pattern matches the current branch'
         required: false
         type: string
+      docRef:
+        description: 'Default git branch for documentation'
+        required: false
+        type: string
+        default: 'docs/main'
     secrets:
       githubToken:
         description: 'GitHub Token'
@@ -57,8 +62,17 @@ on:
         description: Project version
         value: ${{ jobs.context.outputs.version }}
       semanticVersion:
-        description: Should build
+        description: Semantic version
         value: ${{ jobs.context.outputs.semanticVersion }}
+      docBranch:
+        description: Documentation branch
+        value: ${{ jobs.context.outputs.docBranch }}
+      docVersion:
+        description: Documentation version
+        value: ${{ jobs.context.outputs.docVersion }}
+      docCommitMsg:
+        description: Documentation CI commit message
+        value: ${{ jobs.context.outputs.docCommitMsg }}
 
 jobs:
   context:
@@ -116,6 +130,26 @@ jobs:
             echo shouldPublish=${{ steps.context.outputs.decision_publish }} >> $GITHUB_OUTPUT
           fi
 
+      - name: Evaluate doc context
+        id: docContext
+        shell: bash
+        run: |
+          if [[ '${{ steps.context.outputs.onRelease }}' == 'true' ]]; then
+            docBranch="docs/${{ inputs.profile }}/v${{ steps.context.outputs.version }}"
+            docVersion="${{ steps.context.outputs.version }}"
+            git fetch
+            git checkout $(git show-ref --verify --quiet refs/heads/$docBranch || echo '-b') $docBranch
+            git push -u origin $docBranch
+          else
+            docBranch="${{ inputs.docRef }}"
+            docVersion="${{ steps.context.outputs.defaultBranch }}"
+          fi
+          
+          commitVersion="$docVersion-${{ steps.context.outputs.commitShortId }}"
+          echo docBranch=$docBranch >> $GITHUB_OUTPUT
+          echo docVersion=$docVersion >> $GITHUB_OUTPUT
+          echo docCommitMsg="${{ inputs.profile }} documentation [$commitVersion]" >> $GITHUB_OUTPUT
+
     outputs:
       branch: ${{ steps.context.outputs.branch }}
       isRelease: ${{ steps.context.outputs.onRelease }}
@@ -125,3 +159,6 @@ jobs:
       semanticVersion: ${{ steps.semantic.outputs.semanticVersion }}
       shouldBuild: ${{ steps.verify.outputs.shouldBuild }}
       shouldPublish: ${{ steps.verify.outputs.shouldPublish }}
+      docBranch: ${{ steps.docContext.outputs.docBranch }}
+      docVersion: ${{ steps.docContext.outputs.docVersion }}
+      docCommitMsg: ${{ steps.docContext.outputs.docCommitMsg }}
