@@ -73,13 +73,13 @@ jobs:
       DOC_PROFILE: ${{ inputs.profile }}:docs
       DOC_PROFILE_PATH: antora/${{ inputs.profile }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ inputs.sha }}
           submodules: 'true'
           
       - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_DOCS_REF }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.PROJECT_DOCS_REF }}
           path: ${{ env.PROJECT_DOCS_PATH }}
