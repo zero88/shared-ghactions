@@ -11,6 +11,10 @@ on:
         description: 'Project version'
         required: true
         type: string
+      semanticVersion:
+        description: 'Project semantic version'
+        required: true
+        type: string
       hashVersion:
         description: 'Project hash commit'
         required: true
@@ -110,6 +114,7 @@ jobs:
               -Pprofile=${{ env.DOC_PROFILE }} \
               -PdocVersion=${{ inputs.docVersion }} \
               -Pversion=${{ inputs.version }} \
+              -PsemanticVersion=${{ inputs.semanticVersion }} \
               -PbuildHash=${{ inputs.hashVersion }} \
               -PbuildBy="GitHub-Action"
 
