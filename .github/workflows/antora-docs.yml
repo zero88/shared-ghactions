@@ -32,6 +32,11 @@ on:
         description: 'Specifics Antora output dir per profile'
         required: false
         type: string
+      syncDoc:
+        description: 'Should sync doc to doc branch'
+        default: 'false'
+        required: false
+        type: string
       docBranch:
         description: 'Doc branch'
         required: true
@@ -119,6 +124,7 @@ jobs:
               -PbuildBy="GitHub-Action"
 
       - name: Sync doc output to Git branch [${{ inputs.docBranch }}]
+        if: inputs.syncDoc == 'true'
         shell: bash
         run: |
           fqn_doc_path="${{ env.PROJECT_DOCS_PATH }}/${{ env.DOC_PROFILE_PATH }}"
