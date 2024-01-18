@@ -90,7 +90,7 @@ jobs:
               -Pprofile=${{ inputs.PROFILE }} \
               -PsemanticVersion=${{ inputs.semanticVersion }} \
               -Dsonar.branch.name=${{ inputs.branch }} \
-              -Dsonar.login=${{ secrets.sonarToken }} \
+              -Dsonar.token=${{ secrets.sonarToken }} \
               -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
