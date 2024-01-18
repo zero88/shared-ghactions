@@ -106,7 +106,7 @@ jobs:
           fingerprint: ${{ secrets.gpgFingerprint }}
           workdir: ${{ env.PROJECT_DOCS_PATH }}
 
-      - uses: actions/setup-java@v3
+      - uses: actions/setup-java@v4
         with:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ inputs.javaVersion }}
