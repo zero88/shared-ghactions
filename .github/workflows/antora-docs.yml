@@ -110,7 +110,7 @@ jobs:
       - name: Build docs
         shell: bash
         run: |
-          ./gradlew antoraDoc \
+          ./gradlew antoraDoc --stacktrace \
               -Pprofile=${{ env.DOC_PROFILE }} \
               -PdocVersion=${{ inputs.docVersion }} \
               -Pversion=${{ inputs.version }} \
