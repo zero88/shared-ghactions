@@ -74,7 +74,7 @@ jobs:
                  -PsemanticVersion=${{ inputs.semanticVersion }} \
                  -Pnexus.username=${{ secrets.ossrhUser }} \
                  -Pnexus.password=${{ secrets.ossrhToken }} )
-          ./gradlew publishToSonatype "${args[@]}"
+          ./gradlew --stacktrace publishToSonatype "${args[@]}"
 
   publish-github:
     if: inputs.isRelease == 'true' && inputs.enableGitHub == 'true'
@@ -109,7 +109,7 @@ jobs:
                  -Psigning.gnupg.passphrase='${{ secrets.gpgPassphrase }}' \
                  -Pnexus.username='${{ secrets.ossrhUser }}' \
                  -Pnexus.password='${{ secrets.ossrhToken }}' )
-          ./gradlew publishToGitHub -Prelease "${args[@]}"
+          ./gradlew --stacktrace publishToGitHub -Prelease "${args[@]}"
 
   publish-release:
     if: inputs.isRelease == 'true'
@@ -145,4 +145,4 @@ jobs:
                  -Psigning.gnupg.passphrase='${{ secrets.gpgPassphrase }}' \
                  -Pnexus.username='${{ secrets.ossrhUser }}' \
                  -Pnexus.password='${{ secrets.ossrhToken }}' )
-          ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease "${args[@]}"
+          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease "${args[@]}"
