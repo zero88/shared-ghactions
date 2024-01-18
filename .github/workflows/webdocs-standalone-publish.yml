@@ -49,14 +49,14 @@ jobs:
       PROJECT_GH_PAGES_PATH: ${{ inputs.profile }}-pages
     steps:
       - name: Checkout ${{ env.PROJECT_NAME }} ${{ env.PROJECT_GH_PAGES_REF }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.PROJECT_GH_PAGES_REF }}
           path: ${{ env.PROJECT_GH_PAGES_PATH }}
           token: ${{ secrets.githubToken }}
 
       - name: Checkout webdocs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ inputs.webdocsRepo }}
           ref: ${{ inputs.webdocsRef }}
