@@ -77,11 +77,9 @@ jobs:
       - name: Run test
         shell: bash
         run: |
-          count=$(./gradlew --stacktrace ${{ inputs.buildArgs }} \
+          ./gradlew --stacktrace ${{ inputs.buildArgs }} \
                       -Pprofile=${{ inputs.PROFILE }} \
-                      -PsemanticVersion=${{ inputs.semanticVersion }} \
-                | tee 1>&2 | grep -c 'There were failing tests' ||:)
-          (( $count > 0 )) && exit 1 || echo
+                      -PsemanticVersion=${{ inputs.semanticVersion }}
 
       - name: SonarQube
         shell: bash
