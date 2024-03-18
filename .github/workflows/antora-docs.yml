@@ -28,6 +28,11 @@ on:
         default: 'false'
         required: false
         type: string
+      antoraCommand:
+        description: 'Specifics Antora build command'
+        default: 'antoraDoc'
+        required: false
+        type: string
       antoraBuildDir:
         description: 'Specifics Antora output dir per profile'
         required: false
@@ -115,7 +120,7 @@ jobs:
       - name: Build docs
         shell: bash
         run: |
-          ./gradlew antoraDoc --stacktrace \
+          ./gradlew ${{ inputs.antoraCommand }} --stacktrace \
               -Pprofile=${{ env.DOC_PROFILE }} \
               -PdocVersion=${{ inputs.docVersion }} \
               -Pversion=${{ inputs.version }} \
