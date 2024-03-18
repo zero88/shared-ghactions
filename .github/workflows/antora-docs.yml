@@ -122,6 +122,15 @@ jobs:
           java-version: ${{ inputs.javaVersion }}
           cache: 'gradle'
 
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ inputs.profile }}-doc-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ inputs.profile }}-doc-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-
+
       - name: Build docs
         shell: bash
         run: |
