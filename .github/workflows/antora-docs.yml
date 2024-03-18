@@ -54,6 +54,11 @@ on:
         description: 'Doc commit message'
         required: true
         type: string
+      docCommitGPGSign:
+        description: 'GPG sign doc commit'
+        default: 'true'
+        required: false
+        type: string
       javaVersion:
         description: 'Java version'
         default: '17'
@@ -103,13 +108,13 @@ jobs:
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           git_user_signingkey: true
-          git_commit_gpgsign: true
+          git_commit_gpgsign: ${{ inputs.docCommitGPGSign }}
           git_tag_gpgsign: false
           git_push_gpgsign: false
           gpg_private_key: ${{ secrets.gpgKey }}
           passphrase: ${{ secrets.gpgPassphrase }}
           fingerprint: ${{ secrets.gpgFingerprint }}
-          workdir: ${{ env.PROJECT_DOCS_PATH }}
+          workdir: ./${{ env.PROJECT_DOCS_PATH }}
 
       - uses: actions/setup-java@v4
         with:
