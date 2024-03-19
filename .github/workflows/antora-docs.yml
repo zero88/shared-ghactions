@@ -131,7 +131,7 @@ jobs:
           restore-keys: |
             gradle-${{ inputs.profile }}-doc-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-
 
-      - name: Build docs
+      - name: Build docs "${{ inputs.antoraCommand }}"
         shell: bash
         run: |
           ./gradlew ${{ inputs.antoraCommand }} --stacktrace \

@@ -5,6 +5,7 @@ on:
     inputs:
       webdocsRepo:
         description: 'Webdocs repository'
+        default: 'zero88/webdocs'
         required: true
         type: string
       webdocsRef:
