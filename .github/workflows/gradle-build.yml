@@ -42,7 +42,7 @@ on:
 
 jobs:
   build:
-    name: Run "${{ inputs.buildArgs }}"
+    name: Run "${{ inputs.profile }}::${{ inputs.buildArgs }}"
     runs-on: ${{ inputs.runnerOS }}
     steps:
       - uses: actions/checkout@v4
