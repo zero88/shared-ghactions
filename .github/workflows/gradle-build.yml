@@ -42,7 +42,7 @@ on:
 
 jobs:
   build:
-    name: Build
+    name: Run "${{ inputs.buildArgs }}"
     runs-on: ${{ inputs.runnerOS }}
     steps:
       - uses: actions/checkout@v4
@@ -61,8 +61,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-gradle-
 
-      - name: Build
-        shell: bash
+      - shell: bash
+        name: Run "${{ inputs.buildArgs }}"
         run: |
           ./gradlew ${{ inputs.buildArgs }} \
               -Pprofile=${{ inputs.profile }} \
