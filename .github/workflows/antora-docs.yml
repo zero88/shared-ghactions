@@ -120,16 +120,10 @@ jobs:
         with:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ inputs.javaVersion }}
-          cache: 'gradle'
 
-      - uses: actions/cache@v4
+      - uses: gradle/actions/setup-gradle@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ inputs.profile }}-doc-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ inputs.profile }}-doc-${{ inputs.javaVersion }}-${{ inputs.javaDist }}-
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Build docs "${{ inputs.antoraCommand }}"
         shell: bash

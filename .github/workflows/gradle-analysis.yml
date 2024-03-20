@@ -58,14 +58,9 @@ jobs:
           distribution: ${{ inputs.javaDist }}
           java-version: ${{ inputs.javaVersion }}
 
-      - uses: actions/cache@v4
+      - uses: gradle/actions/setup-gradle@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-gradle-
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v') }}
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
