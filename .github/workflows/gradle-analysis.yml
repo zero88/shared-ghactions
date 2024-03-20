@@ -1,4 +1,4 @@
-name: Test and analysis
+name: SonarQube analysis
 
 on:
   workflow_call:
@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: 'clean test jacocoTestReport'
+      sonarqube:
+        description: 'Enable sonarqube step'
+        required: false
+        type: string
+        default: 'true'
       javaDist:
         description: 'Java distribution'
         required: false
@@ -29,7 +34,7 @@ on:
         description: 'Java version'
         required: false
         type: string
-        default: '11'
+        default: '17'
       runnerOS:
         description: 'Runner OS'
         required: false
@@ -64,6 +69,7 @@ jobs:
 
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
+        if: ${{ inputs.sonarqube == 'true' }}
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-${{ inputs.javaVersion }}-${{ inputs.javaDist}}-sonar
@@ -72,14 +78,15 @@ jobs:
       - name: Run test
         shell: bash
         run: |
-          ./gradlew --stacktrace ${{ inputs.buildArgs }} \
+          ./gradlew ${{ inputs.buildArgs }} --stacktrace \
                       -Pprofile=${{ inputs.PROFILE }} \
                       -PsemanticVersion=${{ inputs.semanticVersion }}
 
       - name: SonarQube
         shell: bash
+        if: ${{ inputs.sonarqube == 'true' }}
         run: |
-          ./gradlew sonarqube -x test --stacktrace \
+          ./gradlew sonarqube --stacktrace \
               -Pprofile=${{ inputs.PROFILE }} \
               -PsemanticVersion=${{ inputs.semanticVersion }} \
               -Dsonar.branch.name=${{ inputs.branch }} \
