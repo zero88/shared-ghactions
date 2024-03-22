@@ -7,14 +7,22 @@ on:
         description: 'Build profile'
         type: string
         required: true
-      semanticVersion:
-        description: 'Project semantic version'
-        type: string
-        required: true
       branch:
         description: 'Git branch'
         type: string
         required: true
+      version:
+        description: 'Project version'
+        type: string
+        required: true
+      semanticVersion:
+        description: 'Project semantic version'
+        type: string
+        required: true
+      hashVersion:
+        description: 'Project hash commit'
+        type: string
+        required: false
       buildArgs:
         description: 'Gradle test arguments'
         required: false
@@ -25,6 +33,11 @@ on:
         required: false
         type: string
         default: 'true'
+      sonarProps:
+        description: 'Sonarqube properties'
+        required: false
+        type: string
+        default: ''
       javaDist:
         description: 'Java distribution'
         required: false
@@ -79,18 +92,25 @@ jobs:
         shell: bash
         run: |
           ./gradlew ${{ inputs.buildArgs }} --stacktrace \
-                      -Pprofile=${{ inputs.PROFILE }} \
-                      -PsemanticVersion=${{ inputs.semanticVersion }}
+              -Pprofile=${{ inputs.PROFILE }} \
+              -Pversion=${{ inputs.version }} \
+              -PsemanticVersion=${{ inputs.semanticVersion }} \
+              -PbuildBy="GitHub-Action" \
+              -PbuildHash=${{ inputs.hashVersion }}
 
       - name: SonarQube
         shell: bash
         if: ${{ inputs.sonarqube == 'true' }}
         run: |
-          ./gradlew sonarqube --stacktrace \
+          ./gradlew sonarqube \
               -Pprofile=${{ inputs.PROFILE }} \
+              -Pversion=${{ inputs.version }} \
               -PsemanticVersion=${{ inputs.semanticVersion }} \
+              -PbuildBy="GitHub-Action" \
+              -PbuildHash=${{ inputs.hashVersion }} \
               -Dsonar.branch.name=${{ inputs.branch }} \
               -Dsonar.token=${{ secrets.sonarToken }} \
+              --stacktrace ${{ inputs.sonarProps }} \
               -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
         env:
           GITHUB_TOKEN: ${{ secrets.githubToken }}
