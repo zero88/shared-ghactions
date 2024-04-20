@@ -28,6 +28,11 @@ on:
         type: string
         required: false
         default: false
+      publishArgs:
+        description: 'Gradle publish extra arguments'
+        type: string
+        required: false
+        default: ''
       javaDist:
         description: 'Java distribution'
         required: false
@@ -77,7 +82,7 @@ jobs:
                  -PsemanticVersion=${{ inputs.semanticVersion }} \
                  -Pnexus.username=${{ secrets.ossrhUser }} \
                  -Pnexus.password=${{ secrets.ossrhToken }} )
-          ./gradlew --stacktrace publishToSonatype "${args[@]}"
+          ./gradlew --stacktrace publishToSonatype "${args[@]}" ${{ inputs.publishArgs }}
 
   publish-github:
     if: inputs.isRelease == 'true' && inputs.enableGitHub == 'true'
@@ -115,7 +120,7 @@ jobs:
                  -Psigning.gnupg.passphrase='${{ secrets.gpgPassphrase }}' \
                  -Pnexus.username='${{ secrets.ossrhUser }}' \
                  -Pnexus.password='${{ secrets.ossrhToken }}' )
-          ./gradlew --stacktrace publishToGitHub -Prelease "${args[@]}"
+          ./gradlew --stacktrace publishToGitHub -Prelease "${args[@]}" ${{ inputs.publishArgs }}
 
   publish-release:
     if: inputs.isRelease == 'true'
@@ -154,4 +159,4 @@ jobs:
                  -Psigning.gnupg.passphrase='${{ secrets.gpgPassphrase }}' \
                  -Pnexus.username='${{ secrets.ossrhUser }}' \
                  -Pnexus.password='${{ secrets.ossrhToken }}' )
-          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease "${args[@]}"
+          ./gradlew --stacktrace publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease "${args[@]}"  ${{ inputs.publishArgs }}
