@@ -28,7 +28,7 @@ on:
         type: string
         required: false
         default: false
-      publishArgs:
+      buildArgs:
         description: 'Gradle publish extra arguments'
         type: string
         required: false
