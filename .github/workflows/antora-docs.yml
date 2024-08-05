@@ -121,7 +121,7 @@ jobs:
           distribution: ${{ env.JAVA_DIST }}
           java-version: ${{ inputs.javaVersion }}
 
-      - uses: gradle/actions/setup-gradle@v3
+      - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && startsWith(github.ref, 'refs/tags/v') }}
 
