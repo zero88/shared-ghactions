@@ -115,8 +115,11 @@ jobs:
         id: semantic
         shell: bash
         run: |
-          [[ "${{ steps.context.outputs.onRelease }}" == "true" ]] && sv="" || sv=$(grep semanticVersion gradle.properties | cut -d'=' -f2)
-          echo semanticVersion=$sv >> $GITHUB_OUTPUT
+          if [[ "${{ steps.context.outputs.onRelease }}" == "true" ]] || [[ ! -f gradle.properties ]]; then
+            echo semanticVersion="" >> $GITHUB_OUTPUT
+          else
+            echo semanticVersion=$(grep semanticVersion gradle.properties | cut -d'=' -f2) >> $GITHUB_OUTPUT
+          fi
 
       - name: Verify if branch is in ignore list
         id: verify
